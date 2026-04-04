@@ -20,6 +20,8 @@
             android:id="@+id/container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:orientation="vertical"
             android:padding="18dp">
 
@@ -45,8 +47,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
                 android:gravity="end"
-                android:orientation="horizontal" />
+                android:orientation="horizontal"
+                android:paddingTop="@dimen/focus_safe_padding_v"
+                android:paddingBottom="@dimen/focus_safe_padding_v" />
         </blbl.cat3399.core.ui.popup.PopupModalLayout>
     </com.google.android.material.card.MaterialCardView>
 </FrameLayout>

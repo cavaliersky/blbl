@@ -84,6 +84,8 @@
     <dimen name="search_suggest_padding_h">18dp</dimen>
     <dimen name="search_suggest_padding_v">14dp</dimen>
     <dimen name="search_suggest_text_size">18sp</dimen>
+    <dimen name="focus_safe_padding_h">8dp</dimen>
+    <dimen name="focus_safe_padding_v">4dp</dimen>
 
     <dimen name="search_hot_margin_bottom">14dp</dimen>
     <dimen name="search_hot_padding_h">18dp</dimen>
