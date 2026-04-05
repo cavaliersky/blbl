@@ -345,7 +345,7 @@ internal object PlayerUiMode {
         }
 
         (binding.progressSeekOsd.layoutParams as? MarginLayoutParams)?.let { lp ->
-            val height = scaledPx(R.dimen.player_seek_osd_progress_height).coerceAtLeast(1)
+            val height = scaledPx(R.dimen.player_seekbar_touch_height).coerceAtLeast(1)
             val mh = scaledPx(R.dimen.player_seek_osd_margin_h)
             val mb = scaledPx(R.dimen.player_seek_osd_time_margin_bottom)
             if (lp.height != height || lp.marginStart != mh || lp.marginEnd != mh || lp.bottomMargin != mb) {
@@ -358,6 +358,15 @@ internal object PlayerUiMode {
         }
         run {
             binding.progressSeekOsd.progressDrawable = ContextCompat.getDrawable(activity, R.drawable.progress_player_seek_osd)
+            val seekThumb =
+                binding.seekProgress.thumb?.constantState?.newDrawable(activity.resources)?.mutate()
+                    ?: ContextCompat.getDrawable(activity, R.drawable.seekbar_player_thumb)
+            binding.progressSeekOsd.setThumbDrawable(seekThumb)
+            val trackHeight = scaledPx(R.dimen.player_seek_osd_progress_height).coerceAtLeast(1)
+            binding.progressSeekOsd.setTrackHeightPx(trackHeight)
+            binding.progressSeekOsd.setTrackVerticalOffsetPx(
+                scaledPx(R.dimen.player_seek_osd_track_offset_y),
+            )
         }
 
         (binding.controlsRow.layoutParams as? MarginLayoutParams)?.let { lp ->

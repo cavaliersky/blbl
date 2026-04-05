@@ -141,6 +141,7 @@
     <dimen name="player_persistent_progress_height">2dp</dimen>
     <dimen name="player_seek_osd_progress_height">8dp</dimen>
     <dimen name="player_seek_osd_corner_radius">4dp</dimen>
+    <dimen name="player_seek_osd_track_offset_y">2dp</dimen>
     <dimen name="player_seek_osd_margin_h">22dp</dimen>
     <dimen name="player_seek_osd_time_margin_bottom">6dp</dimen>
     <dimen name="player_seek_osd_margin_bottom">12dp</dimen>
