@@ -18,7 +18,6 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
@@ -469,32 +468,16 @@ private class BlblRenderersFactory(
     context: Context,
     private val volumeBalanceProcessor: VolumeBalanceAudioProcessor,
 ) : DefaultRenderersFactory(context) {
-    override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink {
-        return DefaultAudioSink.Builder(context)
-            .setEnableFloatOutput(enableFloatOutput)
-            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
-            .setAudioProcessors(arrayOf(volumeBalanceProcessor))
-            .build()
-    }
-
-    override fun buildVideoRenderers(
-        context: Context,
-        extensionRendererMode: Int,
-        mediaCodecSelector: androidx.media3.exoplayer.mediacodec.MediaCodecSelector,
-        drmSessionManager: androidx.media3.exoplayer.drm.DrmSessionManager,
-        playClearSamplesWithoutKeys: Boolean,
-        enableDecoderFallback: Boolean,
-        eventDispatcher: androidx.media3.exoplayer.analytics.AnalyticsListener,
-    ): Array<androidx.media3.exoplayer.Renderer> {
+    init {
         // 创建优先使用硬解的MediaCodec选择器
-        val hardwarePreferredSelector = androidx.media3.exoplayer.mediacodec.MediaCodecSelector { mimeType, requiresSecureDecoder, requiresTunneledAudioDecoding ->
-            // 先获取所有可用的编解码器
-            val codecs = mediaCodecSelector.getDecoderInfos(mimeType, requiresSecureDecoder, requiresTunneledAudioDecoding)
+        setMediaCodecSelector { mimeType, requiresSecureDecoder, requiresTunneledAudioDecoding ->
+            // 获取默认的编解码器列表
+            val defaultSelector = androidx.media3.exoplayer.mediacodec.MediaCodecSelector.DEFAULT
+            val codecs = defaultSelector.getDecoderInfos(mimeType, requiresSecureDecoder, requiresTunneledAudioDecoding)
             
             // 对H.265进行特殊处理：优先硬解
-            if (mimeType == "video/hevc" || mimeType == "video/x-vnd.on2.vp9") {
-                // 将硬解编解码器（通常包含特定厂商名称）排到前面
-                // 排除Google软解和标记为software的解码器
+            if (mimeType == "video/hevc") {
+                // 将硬解编解码器（不是Google软解）排到前面
                 codecs.sortByDescending { codec ->
                     !codec.name.contains("OMX.google", ignoreCase = true) &&
                     !codec.name.contains("software", ignoreCase = true)
@@ -503,15 +486,13 @@ private class BlblRenderersFactory(
             
             codecs
         }
-        
-        return super.buildVideoRenderers(
-            context,
-            extensionRendererMode,
-            hardwarePreferredSelector,
-            drmSessionManager,
-            playClearSamplesWithoutKeys,
-            enableDecoderFallback,
-            eventDispatcher,
-        )
+    }
+
+    override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink {
+        return DefaultAudioSink.Builder(context)
+            .setEnableFloatOutput(enableFloatOutput)
+            .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+            .setAudioProcessors(arrayOf(volumeBalanceProcessor))
+            .build()
     }
 }
