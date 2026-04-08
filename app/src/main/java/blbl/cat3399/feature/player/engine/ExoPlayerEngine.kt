@@ -470,21 +470,56 @@ private class BlblRenderersFactory(
 ) : DefaultRenderersFactory(context) {
     init {
         // 创建优先使用硬解的MediaCodec选择器
+        // 针对国科GOKE盒子的H.265硬解支持：OMX.goke.video.decoder.hevc
         setMediaCodecSelector { mimeType, requiresSecureDecoder, requiresTunneledAudioDecoding ->
             // 获取默认的编解码器列表
             val defaultSelector = androidx.media3.exoplayer.mediacodec.MediaCodecSelector.DEFAULT
             val codecs = defaultSelector.getDecoderInfos(mimeType, requiresSecureDecoder, requiresTunneledAudioDecoding)
             
-            // 对H.265进行特殊处理：优先硬解
+            // 对H.265进行特殊处理：优先使用硬解而非软解
             if (mimeType == "video/hevc") {
-                // 将硬解编解码器（不是Google软解）排到前面
-                codecs.sortByDescending { codec ->
-                    !codec.name.contains("OMX.google", ignoreCase = true) &&
-                    !codec.name.contains("software", ignoreCase = true)
+                // 分类编解码器
+                val hardwareCodecs = mutableListOf<androidx.media3.exoplayer.mediacodec.MediaCodecInfo>()
+                val softwareCodecs = mutableListOf<androidx.media3.exoplayer.mediacodec.MediaCodecInfo>()
+                
+                for (codec in codecs) {
+                    val name = codec.name
+                    // 硬解判断：包含GOKE或其他厂商名称，且不是Google软解
+                    val isHardware = (
+                        (name.contains("OMX.goke", ignoreCase = true) ||
+                         name.contains("OMX.hisi", ignoreCase = true) ||
+                         name.contains("OMX.mtk", ignoreCase = true) ||
+                         name.contains("OMX.aml", ignoreCase = true) ||
+                         name.contains("OMX.sprd", ignoreCase = true)) &&
+                        !name.contains("software", ignoreCase = true)
+                    )
+                    
+                    if (isHardware) {
+                        hardwareCodecs.add(codec)
+                    } else if (!name.contains("OMX.google", ignoreCase = true)) {
+                        // 非Google的其他编解码器（可能的其他硬解）
+                        hardwareCodecs.add(codec)
+                    } else {
+                        softwareCodecs.add(codec)
+                    }
                 }
+                
+                // 硬解优先级排序（GOKE最优先）
+                hardwareCodecs.sortByDescending { codec ->
+                    when {
+                        codec.name.contains("OMX.goke", ignoreCase = true) -> 100
+                        codec.name.contains("OMX.hisi", ignoreCase = true) -> 90
+                        codec.name.contains("OMX.mtk", ignoreCase = true) -> 80
+                        codec.name.contains("OMX.aml", ignoreCase = true) -> 70
+                        else -> 60
+                    }
+                }
+                
+                // 返回硬解优先，再加上软解备选
+                (hardwareCodecs + softwareCodecs).takeIf { it.isNotEmpty() } ?: codecs
+            } else {
+                codecs
             }
-            
-            codecs
         }
     }
 
