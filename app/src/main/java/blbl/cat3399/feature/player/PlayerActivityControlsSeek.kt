@@ -469,18 +469,25 @@ internal fun PlayerActivity.startHoldScrubSeek(engine: BlblPlayerEngine, directi
     showSeekOsd(posMs = initial, durationMs = duration, bufferedPosMs = engine.bufferedPosition)
 
     val tickMs = PlayerActivity.HOLD_SCRUB_TICK_MS
-    val stepMs =
+    val baseStepMs =
         fixedStepMs?.coerceAtLeast(1L)
             ?: holdScrubStepMs(durationMs = duration, tickMs = tickMs).coerceAtLeast(1L)
-    val deltaMs = stepMs * direction.toLong()
+    
     holdSeekJob =
         lifecycleScope.launch {
+            var elapsedTicksCount = 0L
             while (isActive) {
                 val current = holdScrubPreviewPosMs ?: initial
+                // 加速公式：逐次增加step大小，实现越调越快的效果
+                // 前500ms: 1倍速, 500-1500ms: 2倍速, 1500-2500ms: 3倍速, 以此类推
+                val accelerationMultiplier = (elapsedTicksCount / 5) + 1  // 每5个tick加速1倍
+                val currentStepMs = baseStepMs * accelerationMultiplier
+                val deltaMs = currentStepMs * direction.toLong()
                 val next = (current + deltaMs).coerceIn(0L, duration)
                 holdScrubPreviewPosMs = next
                 showSeekOsd(posMs = next, durationMs = duration, bufferedPosMs = engine.bufferedPosition)
                 delay(tickMs)
+                elapsedTicksCount++
             }
         }
 }
