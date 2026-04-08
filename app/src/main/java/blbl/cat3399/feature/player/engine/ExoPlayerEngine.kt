@@ -18,6 +18,7 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
@@ -468,11 +469,6 @@ private class BlblRenderersFactory(
     context: Context,
     private val volumeBalanceProcessor: VolumeBalanceAudioProcessor,
 ) : DefaultRenderersFactory(context) {
-    init {
-        // 强制优先使用硬解编解码器（对GOKE等国产盒子的H.265硬解支持）
-        setPreferredDecoderFactory(androidx.media3.exoplayer.mediacodec.MediaCodecVideoRenderer::class.java)
-    }
-
     override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink {
         return DefaultAudioSink.Builder(context)
             .setEnableFloatOutput(enableFloatOutput)
@@ -497,9 +493,9 @@ private class BlblRenderersFactory(
             
             // 对H.265进行特殊处理：优先硬解
             if (mimeType == "video/hevc" || mimeType == "video/x-vnd.on2.vp9") {
-                // 将硬解编解码器（通常包含特定厂商名称如"GOKE"）排到前面
+                // 将硬解编解码器（通常包含特定厂商名称）排到前面
+                // 排除Google软解和标记为software的解码器
                 codecs.sortByDescending { codec ->
-                    // 硬解编解码器优先级更高
                     !codec.name.contains("OMX.google", ignoreCase = true) &&
                     !codec.name.contains("software", ignoreCase = true)
                 }
