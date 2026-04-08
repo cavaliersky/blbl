@@ -1738,7 +1738,6 @@ class PlayerActivity : BaseActivity() {
                     return super.dispatchKeyEvent(event)
                 }
                 if (isSidePanelVisible()) return super.dispatchKeyEvent(event)
-                if (osdMode == OsdMode.Full && binding.seekProgress.isFocused) return super.dispatchKeyEvent(event)
                 if (
                     osdMode == OsdMode.Full &&
                     (binding.topBar.hasFocus() || binding.cardUpQuick.hasFocus() || binding.bottomBar.hasFocus())
@@ -1763,7 +1762,6 @@ class PlayerActivity : BaseActivity() {
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
             -> {
                 if (isSidePanelVisible()) return super.dispatchKeyEvent(event)
-                if (osdMode == OsdMode.Full && binding.seekProgress.isFocused) return super.dispatchKeyEvent(event)
                 if (
                     osdMode == OsdMode.Full &&
                     (binding.topBar.hasFocus() || binding.cardUpQuick.hasFocus() || binding.bottomBar.hasFocus())
@@ -2123,16 +2121,18 @@ class PlayerActivity : BaseActivity() {
                         }
                     }
 
-                    if (binding.seekProgress.isFocused && duration != null) {
+                    if (duration != null) {
                         val seekTo = duration * progress / SEEK_MAX
                         val isIjk = engine.kind == PlayerEngineKind.IjkPlayer
-                        if (isIjk && seekBar?.isPressed != true) {
+                        // For touch dragging: always seek immediately
+                        // For key input: defer seek until key is released (IjkPlayer may clamp seeks to buffered edge)
+                        val isKeyInput = !fromUser || (seekBar?.isPressed != true && binding.seekProgress.isFocused)
+                        if (isIjk && isKeyInput) {
                             // Key-scrub (focused SeekBar, not touch dragging): defer the actual seek until
                             // the user stops scrubbing, otherwise ijk/ffmpeg may clamp seeks to the buffered edge.
                             keyScrubPendingSeekToMs = seekTo
                         } else {
-                            val isIjkDragging = isIjk && seekBar?.isPressed == true
-                            if (!isIjkDragging) engine.seekTo(seekTo)
+                            engine.seekTo(seekTo)
                         }
                     }
                 }
