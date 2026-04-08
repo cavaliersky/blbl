@@ -401,7 +401,8 @@ internal fun PlayerActivity.startHoldSeek(direction: Int, showControls: Boolean)
     }
 
     val holdSpeed = holdSeekSpeed()
-    val holdMode = BiliClient.prefs.playerHoldSeekMode
+    // 强制RIGHT键使用拖动进度条模式，不改变播放速度
+    val holdMode = AppPrefs.PLAYER_HOLD_SEEK_MODE_SCRUB  // 始终用拖动模式
     holdPrevSpeed = engine.playbackSpeed
     holdPrevPlayWhenReady = engine.playWhenReady
     holdScrubPreviewPosMs = null
